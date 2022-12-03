@@ -16,7 +16,8 @@ struct Note: Identifiable {
 }
 
 struct ContentView: View {
-    @State var notes: [Note] = [
+    @State private var editMode = EditMode.inactive
+    @State private var notes: [Note] = [
         Note(title: "Note 1", content: "To Be Or Not To Be"),
         Note(title: "Note 2", content: "That Is The Question!")
     ]
@@ -26,24 +27,19 @@ struct ContentView: View {
                 .font(.title)
 
         NavigationView {
-            if (notes.count == 0) {
-                VStack {
-                    Text("No notes... Write some!")
-                            .font(.title2)
-                    Button(action: addItem) {
-                        Text("New")
-                    }
-                            .buttonStyle(.borderedProminent)
-                }
-                        .toolbar {
-                            ToolbarItem {
-                                Button(action: addItem) {
-                                    Label("Add Item", systemImage: "plus")
-                                }
-                            }
+
+            List {
+                if (notes.isEmpty) {
+                    VStack {
+                        Text("No notes... Write some!")
+                                .font(.title2)
+                        Button(action: addItem) {
+                            Text("New")
                         }
-            } else {
-                List {
+                                .buttonStyle(.borderedProminent)
+                    }
+                            .frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+                } else {
                     ForEach(notes) { note in
                         HStack {
                             Text(note.title).foregroundColor(Color.white)
@@ -70,18 +66,22 @@ struct ContentView: View {
                             .listRowBackground(Color.blue)
                             .listRowSeparatorTint(.white)
                 }
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarTrailing) {
+
+            }
+                    .listStyle(.insetGrouped)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            if (!notes.isEmpty) {
                                 EditButton()
                             }
-                            ToolbarItem {
-                                Button(action: addItem) {
-                                    Label("Add Item", systemImage: "plus")
-                                }
+                        }
+                        ToolbarItem {
+                            Button(action: addItem) {
+                                Label("Add Item", systemImage: "plus")
                             }
                         }
-                        .listStyle(.insetGrouped)
-            }
+                    }
+                    .environment(\.editMode, $editMode)
             Text("Select an item")
         }
     }
@@ -98,6 +98,9 @@ struct ContentView: View {
             offsets.forEach { i in
                 notes.remove(at: i)
             }
+        }
+        if (notes.isEmpty) {
+            editMode = EditMode.inactive
         }
     }
 }
