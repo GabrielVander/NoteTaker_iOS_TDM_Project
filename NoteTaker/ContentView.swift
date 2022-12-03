@@ -9,18 +9,19 @@
 import SwiftUI
 import CoreData
 
-struct Note: Identifiable {
-    let id = UUID()
+struct Note: Identifiable, Codable {
+    var id = UUID()
     var title: String
     var content: String
 }
 
 struct ContentView: View {
     @State private var editMode = EditMode.inactive
-    @State private var notes: [Note] = [
-        Note(title: "Note 1", content: "To Be Or Not To Be"),
-        Note(title: "Note 2", content: "That Is The Question!")
-    ]
+    @State private var notes: [Note] = []
+
+    init() {
+        loadNotesFromStorage()
+    }
 
     var body: some View {
         Text("Note Taker")
@@ -56,6 +57,7 @@ struct ContentView: View {
                                                 let index = notes.firstIndex(where: { n in n.id == note.id })
                                                 notes.remove(at: index ?? 0)
                                                 notes.insert(new, at: notes.startIndex)
+                                                persistNotes()
                                             })
                                         }) {
                                         }
@@ -91,6 +93,7 @@ struct ContentView: View {
             let newNote = Note(title: "New Note", content: "I'm an avocado!")
             notes.append(newNote)
         }
+        persistNotes()
     }
 
     private func deleteItems(offsets: IndexSet) {
@@ -101,6 +104,21 @@ struct ContentView: View {
         }
         if (notes.isEmpty) {
             editMode = EditMode.inactive
+        }
+        persistNotes()
+    }
+
+    private func persistNotes() {
+        if let encodedNotes = try? JSONEncoder().encode(notes) {
+            UserDefaults.standard.set(encodedNotes, forKey: "notes")
+        }
+    }
+
+    private func loadNotesFromStorage() {
+        if let encodedNotes = UserDefaults.standard.data(forKey: "notes") {
+            if let savedNotes = try? JSONDecoder().decode([Note].self, from: encodedNotes) {
+                notes = savedNotes
+            }
         }
     }
 }
